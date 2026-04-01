@@ -1,0 +1,367 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Map, Grid, Trash2, Search, Play, Download, X, Trophy, ArrowDown, Info } from 'lucide-react';
+
+// --- FULL FLAG DATASET ---
+const FLAG_DATA = [
+  // NORTH AMERICA
+  { id: 'ca', name: 'Canada', continent: 'North America', code: 'ca' },
+  { id: 'us', name: 'United States', continent: 'North America', code: 'us' },
+  { id: 'mx', name: 'Mexico', continent: 'North America', code: 'mx' },
+  { id: 'cu', name: 'Cuba', continent: 'North America', code: 'cu' },
+  { id: 'gl', name: 'Greenland', continent: 'North America', code: 'gl' },
+  // SOUTH AMERICA
+  { id: 'br', name: 'Brazil', continent: 'South America', code: 'br' },
+  { id: 'ar', name: 'Argentina', continent: 'South America', code: 'ar' },
+  { id: 'cl', name: 'Chile', continent: 'South America', code: 'cl' },
+  { id: 'co', name: 'Colombia', continent: 'South America', code: 'co' },
+  // EUROPE
+  { id: 'gb', name: 'United Kingdom', continent: 'Europe', code: 'gb' },
+  { id: 'fr', name: 'France', continent: 'Europe', code: 'fr' },
+  { id: 'de', name: 'Germany', continent: 'Europe', code: 'de' },
+  { id: 'it', name: 'Italy', continent: 'Europe', code: 'it' },
+  { id: 'es', name: 'Spain', continent: 'Europe', code: 'es' },
+  { id: 'ua', name: 'Ukraine', continent: 'Europe', code: 'ua' },
+  // AFRICA
+  { id: 'za', name: 'South Africa', continent: 'Africa', code: 'za' },
+  { id: 'eg', name: 'Egypt', continent: 'Africa', code: 'eg' },
+  { id: 'ng', name: 'Nigeria', continent: 'Africa', code: 'ng' },
+  { id: 'ke', name: 'Kenya', continent: 'Africa', code: 'ke' },
+  { id: 'ma', name: 'Morocco', continent: 'Africa', code: 'ma' },
+  // ASIA
+  { id: 'jp', name: 'Japan', continent: 'Asia', code: 'jp' },
+  { id: 'cn', name: 'China', continent: 'Asia', code: 'cn' },
+  { id: 'in', name: 'India', continent: 'Asia', code: 'in' },
+  { id: 'kr', name: 'South Korea', continent: 'Asia', code: 'kr' },
+  { id: 'vn', name: 'Vietnam', continent: 'Asia', code: 'vn' },
+  // OCEANIA
+  { id: 'au', name: 'Australia', continent: 'Oceania', code: 'au' },
+  { id: 'nz', name: 'New Zealand', continent: 'Oceania', code: 'nz' },
+  { id: 'fj', name: 'Fiji', continent: 'Oceania', code: 'fj' },
+];
+
+const CONTINENTS = ['North America', 'South America', 'Europe', 'Africa', 'Asia', 'Oceania'];
+
+export default function App() {
+  const [viewMode, setViewMode] = useState('grid'); 
+  const [placedFlags, setPlacedFlags] = useState({});
+  const [selectedFlag, setSelectedFlag] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Game State
+  const [gameBoard, setGameBoard] = useState(Array(25).fill(null)); // 5x5 grid
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+
+  const GRID_COLS = 10;
+  const GRID_ROWS = 10;
+
+  // Filter library
+  const availableFlags = FLAG_DATA.filter(flag => 
+    flag.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleLibraryClick = (flag) => {
+    setSelectedFlag(selectedFlag?.id === flag.id ? null : flag);
+  };
+
+  const handleGridSlotClick = (slotId) => {
+    if (viewMode === 'play') return;
+    if (selectedFlag) {
+      setPlacedFlags(prev => ({ ...prev, [slotId]: selectedFlag }));
+      setSelectedFlag(null);
+    } else if (placedFlags[slotId]) {
+      setPlacedFlags(prev => {
+        const newPlaced = { ...prev };
+        delete newPlaced[slotId];
+        return newPlaced;
+      });
+    }
+  };
+
+  // --- GAME LOGIC ---
+  const dropFlag = (colIndex) => {
+    if (!selectedFlag || gameOver) return;
+    
+    setGameBoard(prev => {
+      const next = [...prev];
+      let droppedRow = -1;
+      
+      for (let r = 4; r >= 0; r--) {
+        if (!next[r * 5 + colIndex]) {
+          droppedRow = r;
+          break;
+        }
+      }
+
+      if (droppedRow === -1) {
+        setGameOver(true);
+        return prev;
+      }
+
+      next[droppedRow * 5 + colIndex] = { ...selectedFlag, instanceId: Math.random() };
+      return next;
+    });
+
+    setSelectedFlag(null);
+  };
+
+  const checkMerges = useCallback(() => {
+    setGameBoard(prev => {
+      let next = [...prev];
+      let merged = false;
+      let pointsGained = 0;
+
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          const idx = r * 5 + c;
+          const current = next[idx];
+          if (!current) continue;
+
+          const neighbors = [
+            { r, c: c + 1 }, // Right
+            { r: r + 1, c }  // Down
+          ];
+
+          neighbors.forEach(n => {
+            if (n.r < 5 && n.c < 5) {
+              const nIdx = n.r * 5 + n.c;
+              const neighbor = next[nIdx];
+              if (neighbor && neighbor.continent === current.continent) {
+                next[idx] = null;
+                next[nIdx] = null;
+                merged = true;
+                pointsGained += 100;
+              }
+            }
+          });
+        }
+      }
+
+      if (merged) {
+        setScore(s => s + pointsGained);
+        // Gravity
+        for (let c = 0; c < 5; c++) {
+          let column = [];
+          for (let r = 0; r < 5; r++) {
+            if (next[r * 5 + c]) column.push(next[r * 5 + c]);
+          }
+          for (let r = 4; r >= 0; r--) {
+            next[r * 5 + c] = column.pop() || null;
+          }
+        }
+        return next;
+      }
+      return prev;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (viewMode === 'play' && !gameOver) {
+      const timer = setInterval(checkMerges, 500);
+      return () => clearInterval(timer);
+    }
+  }, [viewMode, gameOver, checkMerges]);
+
+  const resetGame = () => {
+    setGameBoard(Array(25).fill(null));
+    setScore(0);
+    setGameOver(false);
+  };
+
+  return (
+    <div className={`flex h-screen w-full bg-slate-950 text-slate-200 overflow-hidden font-sans ${viewMode === 'export' ? 'p-0' : ''}`}>
+      
+      {/* SIDEBAR */}
+      {viewMode !== 'export' && (
+        <div className="w-72 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-full shadow-2xl">
+          <div className="p-4 border-b border-slate-800 space-y-4">
+            <h1 className="text-lg font-bold flex items-center gap-2">🌍 Flag Library</h1>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+              <input 
+                type="text" 
+                placeholder="Find flag..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar">
+            {CONTINENTS.map(continent => {
+              const flags = availableFlags.filter(f => f.continent === continent);
+              if (flags.length === 0) return null;
+              return (
+                <div key={continent}>
+                  <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">{continent}</h2>
+                  <div className="grid grid-cols-2 gap-2">
+                    {flags.map(flag => (
+                      <button
+                        key={flag.id}
+                        onClick={() => handleLibraryClick(flag)}
+                        className={`p-2 rounded-lg border text-center transition-all ${
+                          selectedFlag?.id === flag.id ? 'bg-blue-600 border-blue-400' : 'bg-slate-800 border-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <FlagImage code={flag.code} name={flag.name} className="w-full h-8 mx-auto mb-1" />
+                        <span className="text-[9px] block truncate text-slate-300">{flag.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* MAIN VIEW */}
+      <div className={`flex-1 flex flex-col h-full relative ${viewMode === 'export' ? 'bg-white text-black' : ''}`}>
+        
+        {/* TOOLBAR */}
+        {viewMode !== 'export' && (
+          <div className="h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50">
+            <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
+              <button onClick={() => setViewMode('grid')} className={`px-3 py-1 rounded text-xs font-bold transition-all ${viewMode === 'grid' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}><Grid size={12} className="inline mr-1" /> GRID</button>
+              <button onClick={() => { setViewMode('play'); resetGame(); }} className={`px-3 py-1 rounded text-xs font-bold transition-all ${viewMode === 'play' ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}><Play size={12} className="inline mr-1" /> PLAY</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setViewMode('export')} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold flex items-center gap-1"><Download size={12} /> EXPORT</button>
+              <button onClick={() => { setPlacedFlags({}); resetGame(); }} className="p-1.5 text-slate-500 hover:text-red-400"><Trash2 size={16} /></button>
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'export' && (
+          <button onClick={() => setViewMode('grid')} className="fixed top-4 right-4 bg-slate-900 text-white p-2 rounded-full shadow-lg z-50"><X size={20} /></button>
+        )}
+
+        <div className={`flex-1 overflow-auto p-6 ${viewMode === 'export' ? 'bg-white' : ''}`}>
+          {viewMode === 'play' ? (
+            <div className="max-w-md mx-auto flex flex-col items-center gap-6 mt-4">
+              <div className="flex gap-10 bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl w-full justify-center">
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Score</p>
+                  <p className="text-3xl font-black text-emerald-400">{score}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Next</p>
+                  <div className="w-12 h-8 mx-auto mt-1 border border-slate-700 rounded overflow-hidden">
+                    {selectedFlag ? <FlagImage code={selectedFlag.code} name={selectedFlag.name} /> : <div className="bg-slate-800 h-full w-full" />}
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative p-2 bg-slate-900 border-4 border-slate-800 rounded-xl shadow-2xl">
+                <div className="grid grid-cols-5 gap-1 mb-2">
+                  {[0,1,2,3,4].map(c => (
+                    <button key={`drop-${c}`} onClick={() => dropFlag(c)} className="h-8 bg-slate-800 hover:bg-blue-600 rounded flex items-center justify-center transition-colors"><ArrowDown size={14} /></button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-5 grid-rows-5 gap-1 bg-slate-950 p-1">
+                  {gameBoard.map((flag, i) => (
+                    <div key={`cell-${i}`} className={`w-16 h-16 rounded border ${flag ? 'bg-slate-800 border-slate-700' : 'bg-slate-900/30 border-slate-900'} flex flex-col items-center justify-center`}>
+                      {flag && (
+                        <>
+                          <FlagImage code={flag.code} name={flag.name} className="w-10 h-7" />
+                          <span className="text-[6px] mt-1 text-slate-500 font-bold uppercase">{flag.continent}</span>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {gameOver && (
+                  <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center rounded-lg z-10">
+                    <Trophy className="text-yellow-500 mb-2" size={40} />
+                    <p className="font-black text-xl">GAME OVER</p>
+                    <p className="text-emerald-400 mb-4 font-bold">Score: {score}</p>
+                    <button onClick={resetGame} className="px-4 py-2 bg-blue-600 rounded-lg text-sm font-bold">RESTART</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              {viewMode === 'export' && (
+                <div className="mb-6 text-center text-slate-900">
+                  <h2 className="text-2xl font-black">MY FLAG COLLECTION</h2>
+                  <p className="text-sm opacity-60">Generated Grid Layout</p>
+                </div>
+              )}
+              <div 
+                className={`grid ${viewMode === 'export' ? 'gap-1' : 'gap-2'}`}
+                style={{ 
+                  gridTemplateColumns: `repeat(${viewMode === 'export' ? 12 : GRID_COLS}, ${viewMode === 'export' ? '1fr' : '64px'})`,
+                  width: viewMode === 'export' ? '100%' : 'auto'
+                }}
+              >
+                {Array.from({ length: viewMode === 'export' ? 48 : GRID_COLS * GRID_ROWS }).map((_, i) => (
+                  <Slot 
+                    key={`slot-${i}`} 
+                    id={i}
+                    flag={placedFlags[i]} 
+                    onClick={handleGridSlotClick} 
+                    isActive={!!selectedFlag && !placedFlags[i]} 
+                    isExport={viewMode === 'export'}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+      `}} />
+    </div>
+  );
+}
+
+function Slot({ id, flag, onClick, isActive, isExport }) {
+  if (isExport) {
+    return (
+      <div className="aspect-[4/3] bg-white border border-slate-200 p-1 flex flex-col items-center justify-center">
+        {flag ? (
+          <>
+            <FlagImage code={flag.code} name={flag.name} className="w-full h-auto object-contain" />
+            <span className="text-[6px] font-bold mt-1 text-slate-800">{flag.name}</span>
+          </>
+        ) : <div className="w-full h-full bg-slate-50" />}
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      onClick={() => onClick(id)}
+      className={`w-16 h-12 rounded border flex flex-col items-center justify-center transition-all cursor-pointer ${
+        flag ? 'bg-slate-800 border-slate-700' : 
+        isActive ? 'border-blue-500 border-dashed bg-blue-500/10' : 'border-slate-800 border-dashed hover:bg-slate-900'
+      }`}
+    >
+      {flag ? (
+        <>
+          <FlagImage code={flag.code} name={flag.name} className="w-10 h-7" />
+          <span className="text-[7px] text-slate-500 mt-1 truncate w-full text-center">{flag.name}</span>
+        </>
+      ) : <span className="text-[8px] text-slate-800">{id}</span>}
+    </div>
+  );
+}
+
+function FlagImage({ code, name, className = "" }) {
+  const [error, setError] = useState(false);
+  if (error) return <div className={`bg-slate-800 flex items-center justify-center text-[10px] ${className}`}>🏁</div>;
+  return (
+    <img 
+      src={`https://flagcdn.com/w80/${code.toLowerCase()}.png`} 
+      alt={name} 
+      className={`object-contain ${className}`}
+      onError={() => setError(true)}
+    />
+  );
+}
