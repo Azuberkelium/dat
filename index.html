@@ -1,0 +1,616 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Map, Grid, Trash2, Search, Play, Download, X, Trophy, ArrowDown, Info, RefreshCw } from 'lucide-react';
+
+// --- FULL FLAG DATASET (195+ Countries) ---
+const FLAG_DATA = [
+  // AFRICA (54)
+  { id: 'dz', name: 'Algeria', continent: 'Africa', code: 'dz' },
+  { id: 'ao', name: 'Angola', continent: 'Africa', code: 'ao' },
+  { id: 'bj', name: 'Benin', continent: 'Africa', code: 'bj' },
+  { id: 'bw', name: 'Botswana', continent: 'Africa', code: 'bw' },
+  { id: 'bf', name: 'Burkina Faso', continent: 'Africa', code: 'bf' },
+  { id: 'bi', name: 'Burundi', continent: 'Africa', code: 'bi' },
+  { id: 'cv', name: 'Cabo Verde', continent: 'Africa', code: 'cv' },
+  { id: 'cm', name: 'Cameroon', continent: 'Africa', code: 'cm' },
+  { id: 'cf', name: 'Central African Republic', continent: 'Africa', code: 'cf' },
+  { id: 'td', name: 'Chad', continent: 'Africa', code: 'td' },
+  { id: 'km', name: 'Comoros', continent: 'Africa', code: 'km' },
+  { id: 'cd', name: 'DR Congo', continent: 'Africa', code: 'cd' },
+  { id: 'cg', name: 'Republic of the Congo', continent: 'Africa', code: 'cg' },
+  { id: 'ci', name: 'Côte d\'Ivoire', continent: 'Africa', code: 'ci' },
+  { id: 'dj', name: 'Djibouti', continent: 'Africa', code: 'dj' },
+  { id: 'eg', name: 'Egypt', continent: 'Africa', code: 'eg' },
+  { id: 'gq', name: 'Equatorial Guinea', continent: 'Africa', code: 'gq' },
+  { id: 'er', name: 'Eritrea', continent: 'Africa', code: 'er' },
+  { id: 'sz', name: 'Eswatini', continent: 'Africa', code: 'sz' },
+  { id: 'et', name: 'Ethiopia', continent: 'Africa', code: 'et' },
+  { id: 'ga', name: 'Gabon', continent: 'Africa', code: 'ga' },
+  { id: 'gm', name: 'Gambia', continent: 'Africa', code: 'gm' },
+  { id: 'gh', name: 'Ghana', continent: 'Africa', code: 'gh' },
+  { id: 'gn', name: 'Guinea', continent: 'Africa', code: 'gn' },
+  { id: 'gw', name: 'Guinea-Bissau', continent: 'Africa', code: 'gw' },
+  { id: 'ke', name: 'Kenya', continent: 'Africa', code: 'ke' },
+  { id: 'ls', name: 'Lesotho', continent: 'Africa', code: 'ls' },
+  { id: 'lr', name: 'Liberia', continent: 'Africa', code: 'lr' },
+  { id: 'ly', name: 'Libya', continent: 'Africa', code: 'ly' },
+  { id: 'mg', name: 'Madagascar', continent: 'Africa', code: 'mg' },
+  { id: 'mw', name: 'Malawi', continent: 'Africa', code: 'mw' },
+  { id: 'ml', name: 'Mali', continent: 'Africa', code: 'ml' },
+  { id: 'mr', name: 'Mauritania', continent: 'Africa', code: 'mr' },
+  { id: 'mu', name: 'Mauritius', continent: 'Africa', code: 'mu' },
+  { id: 'ma', name: 'Morocco', continent: 'Africa', code: 'ma' },
+  { id: 'mz', name: 'Mozambique', continent: 'Africa', code: 'mz' },
+  { id: 'na', name: 'Namibia', continent: 'Africa', code: 'na' },
+  { id: 'ne', name: 'Niger', continent: 'Africa', code: 'ne' },
+  { id: 'ng', name: 'Nigeria', continent: 'Africa', code: 'ng' },
+  { id: 'rw', name: 'Rwanda', continent: 'Africa', code: 'rw' },
+  { id: 'st', name: 'Sao Tome and Principe', continent: 'Africa', code: 'st' },
+  { id: 'sn', name: 'Senegal', continent: 'Africa', code: 'sn' },
+  { id: 'sc', name: 'Seychelles', continent: 'Africa', code: 'sc' },
+  { id: 'sl', name: 'Sierra Leone', continent: 'Africa', code: 'sl' },
+  { id: 'so', name: 'Somalia', continent: 'Africa', code: 'so' },
+  { id: 'za', name: 'South Africa', continent: 'Africa', code: 'za' },
+  { id: 'ss', name: 'South Sudan', continent: 'Africa', code: 'ss' },
+  { id: 'sd', name: 'Sudan', continent: 'Africa', code: 'sd' },
+  { id: 'tz', name: 'Tanzania', continent: 'Africa', code: 'tz' },
+  { id: 'tg', name: 'Togo', continent: 'Africa', code: 'tg' },
+  { id: 'tn', name: 'Tunisia', continent: 'Africa', code: 'tn' },
+  { id: 'ug', name: 'Uganda', continent: 'Africa', code: 'ug' },
+  { id: 'zm', name: 'Zambia', continent: 'Africa', code: 'zm' },
+  { id: 'zw', name: 'Zimbabwe', continent: 'Africa', code: 'zw' },
+
+  // ASIA (48)
+  { id: 'af', name: 'Afghanistan', continent: 'Asia', code: 'af' },
+  { id: 'am', name: 'Armenia', continent: 'Asia', code: 'am' },
+  { id: 'az', name: 'Azerbaijan', continent: 'Asia', code: 'az' },
+  { id: 'bh', name: 'Bahrain', continent: 'Asia', code: 'bh' },
+  { id: 'bd', name: 'Bangladesh', continent: 'Asia', code: 'bd' },
+  { id: 'bt', name: 'Bhutan', continent: 'Asia', code: 'bt' },
+  { id: 'bn', name: 'Brunei', continent: 'Asia', code: 'bn' },
+  { id: 'kh', name: 'Cambodia', continent: 'Asia', code: 'kh' },
+  { id: 'cn', name: 'China', continent: 'Asia', code: 'cn' },
+  { id: 'cy', name: 'Cyprus', continent: 'Asia', code: 'cy' },
+  { id: 'ge', name: 'Georgia', continent: 'Asia', code: 'ge' },
+  { id: 'in', name: 'India', continent: 'Asia', code: 'in' },
+  { id: 'id', name: 'Indonesia', continent: 'Asia', code: 'id' },
+  { id: 'ir', name: 'Iran', continent: 'Asia', code: 'ir' },
+  { id: 'iq', name: 'Iraq', continent: 'Asia', code: 'iq' },
+  { id: 'il', name: 'Israel', continent: 'Asia', code: 'il' },
+  { id: 'jp', name: 'Japan', continent: 'Asia', code: 'jp' },
+  { id: 'jo', name: 'Jordan', continent: 'Asia', code: 'jo' },
+  { id: 'kz', name: 'Kazakhstan', continent: 'Asia', code: 'kz' },
+  { id: 'kw', name: 'Kuwait', continent: 'Asia', code: 'kw' },
+  { id: 'kg', name: 'Kyrgyzstan', continent: 'Asia', code: 'kg' },
+  { id: 'la', name: 'Laos', continent: 'Asia', code: 'la' },
+  { id: 'lb', name: 'Lebanon', continent: 'Asia', code: 'lb' },
+  { id: 'my', name: 'Malaysia', continent: 'Asia', code: 'my' },
+  { id: 'mv', name: 'Maldives', continent: 'Asia', code: 'mv' },
+  { id: 'mn', name: 'Mongolia', continent: 'Asia', code: 'mn' },
+  { id: 'mm', name: 'Myanmar', continent: 'Asia', code: 'mm' },
+  { id: 'np', name: 'Nepal', continent: 'Asia', code: 'np' },
+  { id: 'kp', name: 'North Korea', continent: 'Asia', code: 'kp' },
+  { id: 'om', name: 'Oman', continent: 'Asia', code: 'om' },
+  { id: 'pk', name: 'Pakistan', continent: 'Asia', code: 'pk' },
+  { id: 'ps', name: 'Palestine', continent: 'Asia', code: 'ps' },
+  { id: 'ph', name: 'Philippines', continent: 'Asia', code: 'ph' },
+  { id: 'qa', name: 'Qatar', continent: 'Asia', code: 'qa' },
+  { id: 'sa', name: 'Saudi Arabia', continent: 'Asia', code: 'sa' },
+  { id: 'sg', name: 'Singapore', continent: 'Asia', code: 'sg' },
+  { id: 'kr', name: 'South Korea', continent: 'Asia', code: 'kr' },
+  { id: 'lk', name: 'Sri Lanka', continent: 'Asia', code: 'lk' },
+  { id: 'sy', name: 'Syria', continent: 'Asia', code: 'sy' },
+  { id: 'tw', name: 'Taiwan', continent: 'Asia', code: 'tw' },
+  { id: 'tj', name: 'Tajikistan', continent: 'Asia', code: 'tj' },
+  { id: 'th', name: 'Thailand', continent: 'Asia', code: 'th' },
+  { id: 'tl', name: 'Timor-Leste', continent: 'Asia', code: 'tl' },
+  { id: 'tr', name: 'Turkey', continent: 'Asia', code: 'tr' },
+  { id: 'tm', name: 'Turkmenistan', continent: 'Asia', code: 'tm' },
+  { id: 'ae', name: 'United Arab Emirates', continent: 'Asia', code: 'ae' },
+  { id: 'uz', name: 'Uzbekistan', continent: 'Asia', code: 'uz' },
+  { id: 'vn', name: 'Vietnam', continent: 'Asia', code: 'vn' },
+  { id: 'ye', name: 'Yemen', continent: 'Asia', code: 'ye' },
+
+  // EUROPE (44)
+  { id: 'al', name: 'Albania', continent: 'Europe', code: 'al' },
+  { id: 'ad', name: 'Andorra', continent: 'Europe', code: 'ad' },
+  { id: 'at', name: 'Austria', continent: 'Europe', code: 'at' },
+  { id: 'by', name: 'Belarus', continent: 'Europe', code: 'by' },
+  { id: 'be', name: 'Belgium', continent: 'Europe', code: 'be' },
+  { id: 'ba', name: 'Bosnia and Herzegovina', continent: 'Europe', code: 'ba' },
+  { id: 'bg', name: 'Bulgaria', continent: 'Europe', code: 'bg' },
+  { id: 'hr', name: 'Croatia', continent: 'Europe', code: 'hr' },
+  { id: 'cz', name: 'Czechia', continent: 'Europe', code: 'cz' },
+  { id: 'dk', name: 'Denmark', continent: 'Europe', code: 'dk' },
+  { id: 'ee', name: 'Estonia', continent: 'Europe', code: 'ee' },
+  { id: 'fi', name: 'Finland', continent: 'Europe', code: 'fi' },
+  { id: 'fr', name: 'France', continent: 'Europe', code: 'fr' },
+  { id: 'de', name: 'Germany', continent: 'Europe', code: 'de' },
+  { id: 'gr', name: 'Greece', continent: 'Europe', code: 'gr' },
+  { id: 'hu', name: 'Hungary', continent: 'Europe', code: 'hu' },
+  { id: 'is', name: 'Iceland', continent: 'Europe', code: 'is' },
+  { id: 'ie', name: 'Ireland', continent: 'Europe', code: 'ie' },
+  { id: 'it', name: 'Italy', continent: 'Europe', code: 'it' },
+  { id: 'lv', name: 'Latvia', continent: 'Europe', code: 'lv' },
+  { id: 'li', name: 'Liechtenstein', continent: 'Europe', code: 'li' },
+  { id: 'lt', name: 'Lithuania', continent: 'Europe', code: 'lt' },
+  { id: 'lu', name: 'Luxembourg', continent: 'Europe', code: 'lu' },
+  { id: 'mt', name: 'Malta', continent: 'Europe', code: 'mt' },
+  { id: 'md', name: 'Moldova', continent: 'Europe', code: 'md' },
+  { id: 'mc', name: 'Monaco', continent: 'Europe', code: 'mc' },
+  { id: 'me', name: 'Montenegro', continent: 'Europe', code: 'me' },
+  { id: 'nl', name: 'Netherlands', continent: 'Europe', code: 'nl' },
+  { id: 'mk', name: 'North Macedonia', continent: 'Europe', code: 'mk' },
+  { id: 'no', name: 'Norway', continent: 'Europe', code: 'no' },
+  { id: 'pl', name: 'Poland', continent: 'Europe', code: 'pl' },
+  { id: 'pt', name: 'Portugal', continent: 'Europe', code: 'pt' },
+  { id: 'ro', name: 'Romania', continent: 'Europe', code: 'ro' },
+  { id: 'ru', name: 'Russia', continent: 'Europe', code: 'ru' },
+  { id: 'sm', name: 'San Marino', continent: 'Europe', code: 'sm' },
+  { id: 'rs', name: 'Serbia', continent: 'Europe', code: 'rs' },
+  { id: 'sk', name: 'Slovakia', continent: 'Europe', code: 'sk' },
+  { id: 'si', name: 'Slovenia', continent: 'Europe', code: 'si' },
+  { id: 'es', name: 'Spain', continent: 'Europe', code: 'es' },
+  { id: 'se', name: 'Sweden', continent: 'Europe', code: 'se' },
+  { id: 'ch', name: 'Switzerland', continent: 'Europe', code: 'ch' },
+  { id: 'ua', name: 'Ukraine', continent: 'Europe', code: 'ua' },
+  { id: 'gb', name: 'United Kingdom', continent: 'Europe', code: 'gb' },
+  { id: 'va', name: 'Vatican City', continent: 'Europe', code: 'va' },
+
+  // NORTH AMERICA (23)
+  { id: 'ag', name: 'Antigua and Barbuda', continent: 'North America', code: 'ag' },
+  { id: 'bs', name: 'Bahamas', continent: 'North America', code: 'bs' },
+  { id: 'bb', name: 'Barbados', continent: 'North America', code: 'bb' },
+  { id: 'bz', name: 'Belize', continent: 'North America', code: 'bz' },
+  { id: 'ca', name: 'Canada', continent: 'North America', code: 'ca' },
+  { id: 'cr', name: 'Costa Rica', continent: 'North America', code: 'cr' },
+  { id: 'cu', name: 'Cuba', continent: 'North America', code: 'cu' },
+  { id: 'dm', name: 'Dominica', continent: 'North America', code: 'dm' },
+  { id: 'do', name: 'Dominican Republic', continent: 'North America', code: 'do' },
+  { id: 'sv', name: 'El Salvador', continent: 'North America', code: 'sv' },
+  { id: 'gd', name: 'Grenada', continent: 'North America', code: 'gd' },
+  { id: 'gt', name: 'Guatemala', continent: 'North America', code: 'gt' },
+  { id: 'ht', name: 'Haiti', continent: 'North America', code: 'ht' },
+  { id: 'hn', name: 'Honduras', continent: 'North America', code: 'hn' },
+  { id: 'jm', name: 'Jamaica', continent: 'North America', code: 'jm' },
+  { id: 'mx', name: 'Mexico', continent: 'North America', code: 'mx' },
+  { id: 'ni', name: 'Nicaragua', continent: 'North America', code: 'ni' },
+  { id: 'pa', name: 'Panama', continent: 'North America', code: 'pa' },
+  { id: 'kn', name: 'Saint Kitts and Nevis', continent: 'North America', code: 'kn' },
+  { id: 'lc', name: 'Saint Lucia', continent: 'North America', code: 'lc' },
+  { id: 'vc', name: 'Saint Vincent', continent: 'North America', code: 'vc' },
+  { id: 'tt', name: 'Trinidad and Tobago', continent: 'North America', code: 'tt' },
+  { id: 'us', name: 'United States', continent: 'North America', code: 'us' },
+
+  // SOUTH AMERICA (12)
+  { id: 'ar', name: 'Argentina', continent: 'South America', code: 'ar' },
+  { id: 'bo', name: 'Bolivia', continent: 'South America', code: 'bo' },
+  { id: 'br', name: 'Brazil', continent: 'South America', code: 'br' },
+  { id: 'cl', name: 'Chile', continent: 'South America', code: 'cl' },
+  { id: 'co', name: 'Colombia', continent: 'South America', code: 'co' },
+  { id: 'ec', name: 'Ecuador', continent: 'South America', code: 'ec' },
+  { id: 'gy', name: 'Guyana', continent: 'South America', code: 'gy' },
+  { id: 'py', name: 'Paraguay', continent: 'South America', code: 'py' },
+  { id: 'pe', name: 'Peru', continent: 'South America', code: 'pe' },
+  { id: 'sr', name: 'Suriname', continent: 'South America', code: 'sr' },
+  { id: 'uy', name: 'Uruguay', continent: 'South America', code: 'uy' },
+  { id: 've', name: 'Venezuela', continent: 'South America', code: 've' },
+
+  // OCEANIA (14)
+  { id: 'au', name: 'Australia', continent: 'Oceania', code: 'au' },
+  { id: 'fj', name: 'Fiji', continent: 'Oceania', code: 'fj' },
+  { id: 'ki', name: 'Kiribati', continent: 'Oceania', code: 'ki' },
+  { id: 'mh', name: 'Marshall Islands', continent: 'Oceania', code: 'mh' },
+  { id: 'fm', name: 'Micronesia', continent: 'Oceania', code: 'fm' },
+  { id: 'nr', name: 'Nauru', continent: 'Oceania', code: 'nr' },
+  { id: 'nz', name: 'New Zealand', continent: 'Oceania', code: 'nz' },
+  { id: 'pw', name: 'Palau', continent: 'Oceania', code: 'pw' },
+  { id: 'pg', name: 'Papua New Guinea', continent: 'Oceania', code: 'pg' },
+  { id: 'ws', name: 'Samoa', continent: 'Oceania', code: 'ws' },
+  { id: 'sb', name: 'Solomon Islands', continent: 'Oceania', code: 'sb' },
+  { id: 'to', name: 'Tonga', continent: 'Oceania', code: 'to' },
+  { id: 'tv', name: 'Tuvalu', continent: 'Oceania', code: 'tv' },
+  { id: 'vu', name: 'Vanuatu', continent: 'Oceania', code: 'vu' },
+];
+
+const CONTINENTS = ['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania'];
+
+export default function App() {
+  const [viewMode, setViewMode] = useState('grid'); 
+  const [placedFlags, setPlacedFlags] = useState({});
+  const [selectedFlag, setSelectedFlag] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Game State
+  const [gameBoard, setGameBoard] = useState(Array(25).fill(null)); 
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [gameQueue, setGameQueue] = useState([]);
+
+  const GRID_COLS = 10;
+  const GRID_ROWS = 10;
+
+  // Total flag count
+  const totalFlagCount = FLAG_DATA.length;
+
+  // Library logic
+  const availableFlags = useMemo(() => 
+    FLAG_DATA.filter(flag => 
+      flag.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [searchQuery]
+  );
+
+  const handleLibraryClick = (flag) => {
+    setSelectedFlag(selectedFlag?.id === flag.id ? null : flag);
+  };
+
+  const handleGridSlotClick = (slotId) => {
+    if (viewMode === 'play') return;
+    if (selectedFlag) {
+      setPlacedFlags(prev => ({ ...prev, [slotId]: selectedFlag }));
+      setSelectedFlag(null);
+    } else if (placedFlags[slotId]) {
+      setPlacedFlags(prev => {
+        const newPlaced = { ...prev };
+        delete newPlaced[slotId];
+        return newPlaced;
+      });
+    }
+  };
+
+  // --- GAME LOGIC ---
+  const refillQueue = useCallback(() => {
+    const shuffled = [...FLAG_DATA].sort(() => Math.random() - 0.5).slice(0, 5);
+    setGameQueue(shuffled);
+  }, []);
+
+  const dropFlag = (colIndex) => {
+    if (gameOver) return;
+    
+    // Get current from queue
+    let currentFlag = selectedFlag;
+    if (!currentFlag && gameQueue.length > 0) {
+      currentFlag = gameQueue[0];
+    }
+    
+    if (!currentFlag) return;
+
+    let hasDropped = false;
+    setGameBoard(prev => {
+      const next = [...prev];
+      let droppedRow = -1;
+      
+      for (let r = 4; r >= 0; r--) {
+        if (!next[r * 5 + colIndex]) {
+          droppedRow = r;
+          break;
+        }
+      }
+
+      if (droppedRow === -1) {
+        setGameOver(true);
+        return prev;
+      }
+
+      next[droppedRow * 5 + colIndex] = { ...currentFlag, instanceId: Math.random() };
+      hasDropped = true;
+      return next;
+    });
+
+    if (hasDropped) {
+      setGameQueue(prev => {
+        const remaining = prev.slice(1);
+        if (remaining.length === 0) {
+          const nextSet = [...FLAG_DATA].sort(() => Math.random() - 0.5).slice(0, 5);
+          return nextSet;
+        }
+        return remaining;
+      });
+      setSelectedFlag(null);
+    }
+  };
+
+  const checkMerges = useCallback(() => {
+    setGameBoard(prev => {
+      let next = [...prev];
+      let merged = false;
+      let pointsGained = 0;
+
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          const idx = r * 5 + c;
+          const current = next[idx];
+          if (!current) continue;
+
+          // Check Right and Down for merges
+          const neighbors = [
+            { r, c: c + 1 }, // Right
+            { r: r + 1, c }  // Down
+          ];
+
+          neighbors.forEach(n => {
+            if (n.r < 5 && n.c < 5) {
+              const nIdx = n.r * 5 + n.c;
+              const neighbor = next[nIdx];
+              if (neighbor && neighbor.continent === current.continent) {
+                next[idx] = null;
+                next[nIdx] = null;
+                merged = true;
+                pointsGained += 100;
+              }
+            }
+          });
+        }
+      }
+
+      if (merged) {
+        setScore(s => s + pointsGained);
+        // Gravity pass
+        for (let c = 0; c < 5; c++) {
+          let column = [];
+          for (let r = 0; r < 5; r++) {
+            if (next[r * 5 + c]) column.push(next[r * 5 + c]);
+          }
+          for (let r = 4; r >= 0; r--) {
+            next[r * 5 + c] = column.pop() || null;
+          }
+        }
+        return next;
+      }
+      return prev;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (viewMode === 'play' && !gameOver) {
+      const timer = setInterval(checkMerges, 500);
+      return () => clearInterval(timer);
+    }
+  }, [viewMode, gameOver, checkMerges]);
+
+  const resetGame = () => {
+    setGameBoard(Array(25).fill(null));
+    setScore(0);
+    setGameOver(false);
+    refillQueue();
+  };
+
+  useEffect(() => {
+    if (viewMode === 'play') refillQueue();
+  }, [viewMode, refillQueue]);
+
+  const currentActiveFlag = selectedFlag || gameQueue[0];
+
+  return (
+    <div className={`flex h-screen w-full bg-slate-950 text-slate-200 overflow-hidden font-sans ${viewMode === 'export' ? 'p-0' : ''}`}>
+      
+      {/* SIDEBAR */}
+      {viewMode !== 'export' && (
+        <div className="w-72 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col h-full shadow-2xl">
+          <div className="p-4 border-b border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+               <h1 className="text-sm font-bold flex items-center gap-2">🌍 Library</h1>
+               <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-400 border border-slate-700">{totalFlagCount} Flags</span>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+              <input 
+                type="text" 
+                placeholder="Search countries..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar">
+            {CONTINENTS.map(continent => {
+              const flags = availableFlags.filter(f => f.continent === continent);
+              if (flags.length === 0) return null;
+              return (
+                <div key={continent}>
+                  <h2 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">{continent}</h2>
+                  <div className="grid grid-cols-2 gap-2">
+                    {flags.map(flag => (
+                      <button
+                        key={flag.id}
+                        onClick={() => handleLibraryClick(flag)}
+                        className={`p-2 rounded-lg border text-center transition-all ${
+                          selectedFlag?.id === flag.id ? 'bg-blue-600 border-blue-400' : 'bg-slate-800 border-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <FlagImage code={flag.code} name={flag.name} className="w-full h-8 mx-auto mb-1 rounded-[1px]" />
+                        <span className="text-[9px] block truncate text-slate-300">{flag.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* MAIN VIEW */}
+      <div className={`flex-1 flex flex-col h-full relative ${viewMode === 'export' ? 'bg-white text-black' : ''}`}>
+        
+        {/* TOOLBAR */}
+        {viewMode !== 'export' && (
+          <div className="h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50">
+            <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
+              <button onClick={() => setViewMode('grid')} className={`px-4 py-1 rounded text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'grid' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'}`}><Grid size={12} /> GRID</button>
+              <button onClick={() => { setViewMode('play'); resetGame(); }} className={`px-4 py-1 rounded text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Play size={12} /> PLAY</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setViewMode('export')} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold flex items-center gap-1 shadow-md transition-transform active:scale-95"><Download size={12} /> EXPORT</button>
+              <button onClick={() => { setPlacedFlags({}); resetGame(); }} className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'export' && (
+          <button onClick={() => setViewMode('grid')} className="fixed top-4 right-4 bg-slate-900 text-white p-2 rounded-full shadow-lg z-50 hover:bg-slate-800 transition-colors"><X size={20} /></button>
+        )}
+
+        <div className={`flex-1 overflow-auto p-6 ${viewMode === 'export' ? 'bg-white' : ''}`}>
+          {viewMode === 'play' ? (
+            <div className="max-w-md mx-auto flex flex-col items-center gap-6 mt-4">
+              <div className="flex gap-10 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-2xl w-full justify-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-blue-500" />
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Score</p>
+                  <p className="text-4xl font-black text-emerald-400 tabular-nums">{score}</p>
+                </div>
+                <div className="text-center min-w-[80px]">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Next Up</p>
+                  <div className="w-16 h-10 mx-auto border-2 border-slate-700 rounded-lg overflow-hidden bg-slate-950 shadow-inner flex items-center justify-center">
+                    {currentActiveFlag ? <FlagImage code={currentActiveFlag.code} name={currentActiveFlag.name} /> : <RefreshCw className="animate-spin text-slate-700" size={16} />}
+                  </div>
+                  <p className="text-[8px] text-slate-400 mt-1 font-medium truncate">{currentActiveFlag?.name}</p>
+                </div>
+              </div>
+
+              <div className="relative p-3 bg-slate-900 border-4 border-slate-800 rounded-2xl shadow-2xl">
+                <div className="grid grid-cols-5 gap-1.5 mb-3">
+                  {[0,1,2,3,4].map(c => (
+                    <button 
+                      key={`drop-${c}`} 
+                      onClick={() => dropFlag(c)} 
+                      disabled={gameOver}
+                      className="h-10 bg-slate-800 hover:bg-emerald-600/80 rounded-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 group shadow-sm"
+                    >
+                      <ArrowDown size={16} className="text-slate-400 group-hover:text-white group-hover:animate-bounce" />
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-5 grid-rows-5 gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+                  {gameBoard.map((flag, i) => (
+                    <div key={`cell-${i}`} className={`w-16 h-16 rounded-lg border-2 flex flex-col items-center justify-center transition-all ${
+                      flag ? 'bg-slate-800 border-slate-600 shadow-md scale-95' : 'bg-slate-900/30 border-slate-900 shadow-inner'
+                    }`}>
+                      {flag && (
+                        <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
+                          <FlagImage code={flag.code} name={flag.name} className="w-10 h-7 rounded-[2px] shadow-sm" />
+                          <span className="text-[6px] mt-1.5 text-slate-400 font-black uppercase tracking-tighter text-center leading-none px-1">
+                            {flag.continent === 'North America' ? 'N. AMER' : 
+                             flag.continent === 'South America' ? 'S. AMER' : flag.continent}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {gameOver && (
+                  <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center rounded-2xl z-20 backdrop-blur-sm animate-in fade-in duration-500">
+                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl text-center scale-110">
+                      <Trophy className="text-yellow-500 mb-4 mx-auto drop-shadow-[0_0_15px_rgba(234,179,8,0.4)]" size={56} />
+                      <p className="font-black text-2xl mb-1">FINISH!</p>
+                      <p className="text-emerald-400 text-3xl font-black mb-6">{score}</p>
+                      <button 
+                        onClick={resetGame} 
+                        className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-black transition-all shadow-lg active:scale-95"
+                      >
+                        PLAY AGAIN
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 bg-slate-900/50 px-4 py-2 rounded-full border border-slate-800">
+                <Info size={14} className="text-blue-400" />
+                <p className="text-[10px] text-slate-400 font-medium italic">Hint: Merge same-continent flags to clear space and score!</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              {viewMode === 'export' && (
+                <div className="mb-8 text-center text-slate-900 animate-in slide-in-from-top duration-700">
+                  <h2 className="text-3xl font-black tracking-tight">GLOBAL FLAG COLLECTION</h2>
+                  <div className="flex items-center justify-center gap-4 mt-1">
+                    <p className="text-xs uppercase font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">{Object.keys(placedFlags).length} Flags Placed</p>
+                    <p className="text-xs font-medium text-slate-400 italic">Created on Flag Grid App</p>
+                  </div>
+                </div>
+              )}
+              <div 
+                className={`grid transition-all duration-500 ${viewMode === 'export' ? 'gap-1 shadow-2xl' : 'gap-2'}`}
+                style={{ 
+                  gridTemplateColumns: `repeat(${viewMode === 'export' ? 12 : GRID_COLS}, ${viewMode === 'export' ? '1fr' : '64px'})`,
+                  width: viewMode === 'export' ? '100%' : 'auto',
+                  maxWidth: viewMode === 'export' ? '1000px' : 'none'
+                }}
+              >
+                {Array.from({ length: viewMode === 'export' ? Math.max(48, Math.ceil(Object.keys(placedFlags).length / 12) * 12) : GRID_COLS * GRID_ROWS }).map((_, i) => (
+                  <Slot 
+                    key={`slot-${i}`} 
+                    id={i}
+                    flag={placedFlags[i]} 
+                    onClick={handleGridSlotClick} 
+                    isActive={!!selectedFlag && !placedFlags[i]} 
+                    isExport={viewMode === 'export'}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; background-clip: content-box; }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-in { animation: fade-in 0.3s ease-out; }
+      `}} />
+    </div>
+  );
+}
+
+function Slot({ id, flag, onClick, isActive, isExport }) {
+  if (isExport) {
+    return (
+      <div className={`aspect-[4/3] bg-white border border-slate-100 p-1 flex flex-col items-center justify-center ${!flag ? 'bg-slate-50 opacity-30' : ''}`}>
+        {flag ? (
+          <>
+            <FlagImage code={flag.code} name={flag.name} className="w-full h-auto object-contain shadow-sm border-[0.5px] border-slate-200" />
+            <span className="text-[5px] font-black mt-0.5 text-slate-800 truncate w-full text-center">{flag.name}</span>
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      onClick={() => onClick(id)}
+      className={`w-16 h-12 rounded-lg border-2 flex flex-col items-center justify-center transition-all cursor-pointer group ${
+        flag ? 'bg-slate-800 border-slate-700 shadow-md' : 
+        isActive ? 'border-blue-500 border-dashed bg-blue-500/10 animate-pulse' : 'border-slate-800/50 border-dashed hover:bg-slate-900 hover:border-slate-700'
+      }`}
+    >
+      {flag ? (
+        <>
+          <FlagImage code={flag.code} name={flag.name} className="w-10 h-7 rounded-sm shadow-sm" />
+          <span className="text-[7px] text-slate-400 mt-1 truncate w-full text-center px-1 font-bold">{flag.name}</span>
+        </>
+      ) : <span className="text-[9px] text-slate-800 font-black opacity-0 group-hover:opacity-100 transition-opacity">{id}</span>}
+    </div>
+  );
+}
+
+function FlagImage({ code, name, className = "" }) {
+  const [error, setError] = useState(false);
+  if (error) return <div className={`bg-slate-800 flex items-center justify-center text-[10px] ${className}`}>🏁</div>;
+  return (
+    <img 
+      src={`https://flagcdn.com/w160/${code.toLowerCase()}.png`} 
+      alt={name} 
+      className={`object-contain ${className}`}
+      loading="lazy"
+      onError={() => setError(true)}
+    />
+  );
+}
